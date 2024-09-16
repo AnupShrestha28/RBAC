@@ -3,6 +3,9 @@ const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
+// In-memory blacklist to store tokens
+const blacklistedTokens = [];
+
 // Register
 const register = async (req, res) => {
   const { username, email, password, role } = req.body;
@@ -22,10 +25,7 @@ const register = async (req, res) => {
   }
 
   // Check if the email is already in use
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
-  });
-
+  const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     return res.status(400).json({
       message:
@@ -66,9 +66,7 @@ const login = async (req, res) => {
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
 
     if (!user) {
       return res
@@ -77,7 +75,6 @@ const login = async (req, res) => {
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid password." });
     }
@@ -85,7 +82,9 @@ const login = async (req, res) => {
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      {
+        expiresIn: "1h",
+      }
     );
 
     res.status(200).json({
@@ -102,4 +101,18 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+// Logout
+const logout = (req, res) => {
+  const token = req.headers.authorization.split(" ")[1];
+
+  // Add the token to the blacklist
+  blacklistedTokens.push(token);
+  res.status(200).json({ message: "Logout successful" });
+};
+
+// Check if the token is blacklisted
+const isTokenBlacklisted = (token) => {
+  return blacklistedTokens.includes(token);
+};
+
+module.exports = { register, login, logout, isTokenBlacklisted };
