@@ -1,0 +1,36 @@
+// Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  username  String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  items     Item[]   @relation("UserItems")
+}
+
+model Item {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  userId      String   @db.Uuid
+  user        User     @relation("UserItems", fields: [userId], references: [id])
+  
+  @@index([userId])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+  USER
+}
