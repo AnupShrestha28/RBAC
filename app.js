@@ -1,6 +1,5 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const bodyParser = require("body-parser");
 const prisma = require("./prismaClient");
 const swaggerDocs = require("./swagger");
 

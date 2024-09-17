@@ -6,12 +6,10 @@ const getAllUsers = async (req, res) => {
     const users = await prisma.user.findMany();
     res.json(users);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "An error occurred while fetching users.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "An error occurred while fetching users.",
+      error: error.message,
+    });
   }
 };
 
@@ -33,12 +31,10 @@ const getUserById = async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "An error occurred while fetching the user.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "An error occurred while fetching the user.",
+      error: error.message,
+    });
   }
 };
 
@@ -60,12 +56,10 @@ const updateUser = async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "An error occurred while updating the user.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "An error occurred while updating the user.",
+      error: error.message,
+    });
   }
 };
 
@@ -73,22 +67,26 @@ const deleteUser = async (req, res) => {
   const { id } = req.params;
 
   try {
-    // Ensure id is passed and is a valid UUID or format
     if (!id) {
       return res.status(400).json({ message: "User ID is required." });
     }
 
-    // Delete the user
-    await prisma.user.delete({ where: { id } });
+    await prisma.item.deleteMany({
+      where: {
+        userId: id,
+      },
+    });
 
-    res.json({ message: "User deleted successfully" });
+    await prisma.user.delete({
+      where: { id },
+    });
+
+    res.json({ message: "User and associated items deleted successfully." });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "An error occurred while deleting the user.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "An error occurred while deleting the user.",
+      error: error.message,
+    });
   }
 };
 

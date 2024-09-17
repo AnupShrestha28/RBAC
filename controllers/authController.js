@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// In-memory blacklist to store tokens
 const blacklistedTokens = [];
 
 // Register
@@ -16,7 +15,6 @@ const register = async (req, res) => {
     });
   }
 
-  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res
@@ -24,7 +22,6 @@ const register = async (req, res) => {
       .json({ message: "Please provide a valid email address." });
   }
 
-  // Check if the email is already in use
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     return res.status(400).json({

@@ -23,8 +23,8 @@ model Item {
   name        String
   description String
   userId      String   @db.Uuid
-  user        User     @relation("UserItems", fields: [userId], references: [id])
-  
+  user        User     @relation("UserItems", fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
 }
 
