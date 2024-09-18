@@ -1,18 +1,22 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const prisma = require("./prismaClient");
+const { PrismaClient } = require("@prisma/client");
 const swaggerDocs = require("./swagger");
 
 dotenv.config();
 
+const prisma = new PrismaClient();
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 
 const app = express();
 
+// Middleware
 app.use(express.json());
+app.use("/uploads", express.static("uploads")); // Serve static files
 
+// Swagger docs setup
 swaggerDocs(app);
 
 // Routes
@@ -20,6 +24,7 @@ app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/items", itemRoutes);
 
+// Start server
 async function startServer() {
   try {
     await prisma.$connect();

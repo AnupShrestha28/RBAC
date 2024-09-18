@@ -6,6 +6,7 @@ const {
   getItemById,
   updateItem,
   deleteItem,
+  upload,
 } = require("../controllers/itemController");
 
 const router = express.Router();
@@ -21,7 +22,7 @@ const router = express.Router();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -29,9 +30,9 @@ const router = express.Router();
  *                 type: string
  *               description:
  *                 type: string
- *             example:
- *               name: "Sample Item"
- *               description: "This is a sample item"
+ *               photo:
+ *                 type: string
+ *                 format: binary
  *     responses:
  *       201:
  *         description: Item created successfully

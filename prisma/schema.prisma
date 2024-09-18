@@ -1,5 +1,3 @@
-// Prisma schema file
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -22,11 +20,15 @@ model Item {
   id          String   @id @default(uuid()) @db.Uuid
   name        String
   description String
+  photoUrl    String?  
+  photoSize   Int?     // Change from String to Int
   userId      String   @db.Uuid
   user        User     @relation("UserItems", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
+
+
 
 enum Role {
   SUPER_ADMIN
