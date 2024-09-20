@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const { body, param, validationResult } = require("express-validator");
 const formatSize = require("../utils/formatSize");
 
 // Multer configuration for storing images
@@ -45,6 +46,16 @@ const addView = async (req, res) => {
   const userId = req.user.id;
   const { itemId } = req.params;
 
+  // Validate request params
+  await param("itemId")
+    .isUUID()
+    .withMessage("Item ID must be a valid UUID")
+    .run(req);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     // Check if user and item exist
     const userExists = await checkUserExists(userId);
@@ -73,6 +84,16 @@ const addLike = async (req, res) => {
   const userId = req.user.id;
   const { itemId } = req.params;
 
+  // Validate request params
+  await param("itemId")
+    .isUUID()
+    .withMessage("Item ID must be a valid UUID")
+    .run(req);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   try {
     const userExists = await checkUserExists(userId);
     const itemExists = await prisma.item.findUnique({ where: { id: itemId } });
@@ -95,47 +116,68 @@ const addLike = async (req, res) => {
 };
 
 // Add a comment to an item
-const addComment = async (req, res) => {
-  const userId = req.user.id;
-  const { itemId } = req.params;
-  const { comment } = req.body;
+const addComment = [
+  body("comment").notEmpty().withMessage("Comment cannot be empty").isString(),
+  param("itemId").isUUID().withMessage("Item ID must be a valid UUID"),
+  async (req, res) => {
+    const userId = req.user.id;
+    const { itemId } = req.params;
+    const { comment } = req.body;
 
-  try {
-    const userExists = await checkUserExists(userId);
-    const itemExists = await prisma.item.findUnique({ where: { id: itemId } });
-    if (!userExists || !itemExists) {
-      return res.status(404).json({ message: "User or Item not found" });
+    // Validate request body and params
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    const newComment = await prisma.comment.create({
-      data: { userId, itemId, comment },
-    });
+    try {
+      const userExists = await checkUserExists(userId);
+      const itemExists = await prisma.item.findUnique({
+        where: { id: itemId },
+      });
+      if (!userExists || !itemExists) {
+        return res.status(404).json({ message: "User or Item not found" });
+      }
 
-    res.status(201).json(newComment);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error adding comment", error: error.message });
-  }
-};
+      const newComment = await prisma.comment.create({
+        data: { userId, itemId, comment },
+      });
+
+      res.status(201).json(newComment);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error adding comment", error: error.message });
+    }
+  },
+];
 
 // Get all comments for an item
-const getComments = async (req, res) => {
-  const { itemId } = req.params;
+const getComments = [
+  param("itemId").isUUID().withMessage("Item ID must be a valid UUID"),
+  async (req, res) => {
+    const { itemId } = req.params;
 
-  try {
-    const comments = await prisma.comment.findMany({
-      where: { itemId },
-      include: { user: { select: { username: true } } },
-    });
+    // Validate request params
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-    res.status(200).json(comments);
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching comments", error: error.message });
-  }
-};
+    try {
+      const comments = await prisma.comment.findMany({
+        where: { itemId },
+        include: { user: { select: { username: true } } },
+      });
+
+      res.status(200).json(comments);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error fetching comments", error: error.message });
+    }
+  },
+];
 
 const createItem = async (req, res) => {
   upload(req, res, async (err) => {
