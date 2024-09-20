@@ -6,10 +6,67 @@ const {
   getItemById,
   updateItem,
   deleteItem,
+  addView,
+  addLike,
+  addComment,
+  getComments,
   upload,
 } = require("../controllers/itemController");
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /items/{itemId}/view:
+ *   post:
+ *     summary: Add a view to an item
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Items]
+ */
+router.post("/:itemId/view", verifyToken, addView);
+
+/**
+ * @swagger
+ * /items/{itemId}/like:
+ *   post:
+ *     summary: Add a like to an item
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Items]
+ */
+router.post("/:itemId/like", verifyToken, addLike);
+
+/**
+ * @swagger
+ * /items/{itemId}/comment:
+ *   post:
+ *     summary: Add a comment to an item
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Items]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               comment:
+ *                 type: string
+ */
+router.post("/:itemId/comment", verifyToken, addComment);
+
+/**
+ * @swagger
+ * /items/{itemId}/comments:
+ *   get:
+ *     summary: Get all comments for an item
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Items]
+ */
+router.get("/:itemId/comments", verifyToken, getComments);
 
 /**
  * @swagger

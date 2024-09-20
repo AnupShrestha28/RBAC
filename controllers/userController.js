@@ -1,5 +1,7 @@
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const path = require("path");
+const fs = require("fs");
 
 const getAllUsers = async (req, res) => {
   try {
@@ -65,23 +67,40 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   const { id } = req.params;
+  const userRole = req.user.role;
+
+  if (userRole !== "SUPER_ADMIN") {
+    return res.status(403).json({ message: "Access denied." });
+  }
 
   try {
-    if (!id) {
-      return res.status(400).json({ message: "User ID is required." });
-    }
+    const items = await prisma.item.findMany({
+      where: { userId: id },
+    });
+
+    items.forEach((item) => {
+      if (item.photoUrl) {
+        const filePath = path.join(
+          __dirname,
+          "..",
+          "uploads",
+          path.basename(item.photoUrl)
+        );
+        fs.unlink(filePath, (err) => {
+          if (err) console.error("File deletion error:", err);
+        });
+      }
+    });
 
     await prisma.item.deleteMany({
-      where: {
-        userId: id,
-      },
+      where: { userId: id },
     });
 
     await prisma.user.delete({
       where: { id },
     });
 
-    res.json({ message: "User and associated items deleted successfully." });
+    res.json({ message: "User and their items deleted successfully" });
   } catch (error) {
     res.status(500).json({
       message: "An error occurred while deleting the user.",
