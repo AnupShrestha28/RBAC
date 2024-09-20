@@ -223,11 +223,18 @@ const createItem = async (req, res) => {
 
 const getAllItems = async (req, res) => {
   try {
-    const items = await prisma.item.findMany();
+    const items = await prisma.item.findMany({
+      include: {
+        _count: {
+          select: { likes: true },
+        },
+      },
+    });
 
     const formattedItems = items.map((item) => ({
       ...item,
-      photoSize: item.photoSize ? formatSize(item.photoSize) : null, // Format photoSize
+      photoSize: item.photoSize ? formatSize(item.photoSize) : null,
+      likeCount: item._count.likes,
     }));
 
     res.status(200).json(formattedItems);
@@ -245,8 +252,17 @@ const getItemById = async (req, res) => {
   const userId = req.user.id;
 
   try {
+    // Find the item with its creator's ID and the counts of likes and views
     const item = await prisma.item.findUnique({
-      where: { id, userId },
+      where: { id },
+      include: {
+        _count: {
+          select: { likes: true, views: true },
+        },
+        user: {
+          select: { id: true }, // Select the item creator's userId
+        },
+      },
     });
 
     if (!item) {
@@ -255,8 +271,24 @@ const getItemById = async (req, res) => {
         .json({ message: "Item not found or access denied." });
     }
 
-    res.json(item);
+    // Prepare the response data
+    const responseData = {
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      photoUrl: item.photoUrl,
+      photoSize: formatSize(item.photoSize),
+      likeCount: item._count.likes,
+    };
+
+    // If the current user is the creator of the item, include the view count
+    if (item.user.id === userId) {
+      responseData.viewCount = item._count.views;
+    }
+
+    res.status(200).json(responseData);
   } catch (error) {
+    console.error("Error fetching item:", error);
     res.status(500).json({
       message: "An error occurred while fetching the item.",
       error: error.message,
