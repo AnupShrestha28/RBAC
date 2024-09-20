@@ -101,17 +101,32 @@ const addLike = async (req, res) => {
       return res.status(404).json({ message: "User or Item not found" });
     }
 
-    const like = await prisma.like.upsert({
+    // Check if the user already liked the item
+    const existingLike = await prisma.like.findUnique({
       where: { userId_itemId: { userId, itemId } },
-      update: {},
-      create: { userId, itemId },
     });
 
-    res.status(201).json(like);
+    if (existingLike) {
+      // If the like exists, remove it (dislike)
+      await prisma.like.delete({
+        where: { userId_itemId: { userId, itemId } },
+      });
+      return res
+        .status(200)
+        .json({ message: "Disliked the item successfully" });
+    } else {
+      // If the like does not exist, add it
+      const like = await prisma.like.create({
+        data: { userId, itemId },
+      });
+      return res
+        .status(201)
+        .json({ message: "Liked the item successfully", like });
+    }
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Error adding like", error: error.message });
+      .json({ message: "Error updating like status", error: error.message });
   }
 };
 
