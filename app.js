@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const passport = require("passport");
 const { PrismaClient } = require("@prisma/client");
 const swaggerDocs = require("./swagger");
 
@@ -16,7 +17,8 @@ const app = express();
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// Swagger docs setup
+app.use(passport.initialize());
+
 swaggerDocs(app);
 
 // Routes

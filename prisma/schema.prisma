@@ -9,22 +9,26 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid()) @db.Uuid
-  username  String
+  username  String   @unique 
   email     String   @unique
-  password  String
+  password  String?  
   role      Role     @default(USER)
+  githubId  String?  @unique 
+  googleId  String?  @unique 
   items     Item[]   @relation("UserItems")
   views     View[]   @relation("UserViews")
   likes     Like[]   @relation("UserLikes")
   comments  Comment[] @relation("UserComments")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt 
 }
 
 model Item {
   id          String     @id @default(uuid()) @db.Uuid
   name        String
   description String
-  photoUrl    String?  
-  photoSize   Int?     
+  photoUrl    String?
+  photoSize   Int?
   userId      String     @db.Uuid
   user        User       @relation("UserItems", fields: [userId], references: [id], onDelete: Cascade)
   views       View[]
@@ -32,6 +36,8 @@ model Item {
   comments    Comment[]
 
   @@index([userId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // Automatically update on record change
 }
 
 model View {
@@ -41,7 +47,7 @@ model View {
   viewedAt  DateTime @default(now())
   user      User     @relation("UserViews", fields: [userId], references: [id], onDelete: Cascade)
   item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  
+
   @@unique([userId, itemId])
 }
 
@@ -56,13 +62,13 @@ model Like {
 }
 
 model Comment {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  itemId    String   @db.Uuid
-  comment   String
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  itemId      String   @db.Uuid
+  comment     String
   commentedAt DateTime @default(now())
-  user      User     @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
-  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  user        User     @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
+  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
