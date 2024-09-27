@@ -10,6 +10,8 @@ const {
   addLike,
   addComment,
   getComments,
+  updateComment,
+  deleteComment,
   upload,
 } = require("../controllers/itemController");
 
@@ -67,6 +69,55 @@ router.post("/:itemId/comment", verifyToken, addComment);
  *     tags: [Items]
  */
 router.get("/:itemId/comments", verifyToken, getComments);
+
+/**
+ * @swagger
+ * /comments/{commentId}/edit:
+ *   put:
+ *     summary: Update a comment by ID
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Comments]
+ *     parameters:
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               comment:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Comment updated successfully
+ */
+router.put("/:commentId/edit", verifyToken, updateComment);
+
+/**
+ * @swagger
+ * /comments/{commentId}/delete:
+ *   delete:
+ *     summary: Delete a comment by ID
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Comments]
+ *     parameters:
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Comment deleted successfully
+ */
+router.delete("/:commentId/delete", verifyToken, deleteComment);
 
 /**
  * @swagger

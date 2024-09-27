@@ -167,6 +167,82 @@ const addComment = [
   },
 ];
 
+// Update Comment Function
+const updateComment = async (req, res) => {
+  const { commentId } = req.params;
+  const { comment } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Find the comment
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+
+    // Check if the comment exists and if the user is the owner
+    if (!existingComment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    if (existingComment.userId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "You can only edit your own comments" });
+    }
+
+    // Update the comment
+    const updatedComment = await prisma.comment.update({
+      where: { id: commentId },
+      data: { comment },
+    });
+
+    res
+      .status(200)
+      .json({ message: "Comment updated successfully", updatedComment });
+  } catch (error) {
+    res.status(500).json({
+      message: "An error occurred while updating the comment",
+      error: error.message,
+    });
+  }
+};
+
+// Delete Comment Function
+const deleteComment = async (req, res) => {
+  const { commentId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // Find the comment
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+
+    // Check if the comment exists and if the user is the owner
+    if (!existingComment) {
+      return res.status(404).json({ message: "Comment not found" });
+    }
+
+    if (existingComment.userId !== userId) {
+      return res
+        .status(403)
+        .json({ message: "You can only delete your own comments" });
+    }
+
+    // Delete the comment
+    await prisma.comment.delete({
+      where: { id: commentId },
+    });
+
+    res.status(200).json({ message: "Comment deleted successfully" });
+  } catch (error) {
+    res.status(500).json({
+      message: "An error occurred while deleting the comment",
+      error: error.message,
+    });
+  }
+};
+
 // Get all comments for an item
 const getComments = [
   param("itemId").isUUID().withMessage("Item ID must be a valid UUID"),
@@ -433,6 +509,8 @@ module.exports = {
   addView,
   addLike,
   addComment,
+  updateComment,
+  deleteComment,
   getComments,
   upload,
 };
