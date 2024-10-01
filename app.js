@@ -14,13 +14,12 @@ const itemRoutes = require("./routes/itemRoutes");
 
 const app = express();
 
-// Use Helmet with custom configuration for enhanced security
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disable default CSP (for now)
-    frameguard: { action: "deny" }, // Prevent clickjacking
-    hsts: { maxAge: 31536000, includeSubDomains: true }, // Force HTTPS
-    referrerPolicy: { policy: "no-referrer" }, // Controls the Referer header
+    contentSecurityPolicy: false,
+    frameguard: { action: "deny" },
+    hsts: { maxAge: 31536000, includeSubDomains: true },
+    referrerPolicy: { policy: "no-referrer" },
   })
 );
 
