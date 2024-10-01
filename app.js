@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const passport = require("passport");
+const helmet = require("helmet"); // Import Helmet
 const { PrismaClient } = require("@prisma/client");
 const swaggerDocs = require("./swagger");
 
@@ -12,6 +13,16 @@ const userRoutes = require("./routes/userRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 
 const app = express();
+
+// Use Helmet with custom configuration for enhanced security
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disable default CSP (for now)
+    frameguard: { action: "deny" }, // Prevent clickjacking
+    hsts: { maxAge: 31536000, includeSubDomains: true }, // Force HTTPS
+    referrerPolicy: { policy: "no-referrer" }, // Controls the Referer header
+  })
+);
 
 // Middleware
 app.use(express.json());

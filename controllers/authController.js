@@ -65,16 +65,29 @@ const register = async (req, res) => {
   }
 
   try {
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
+    // Check if email is already registered
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
       return res.status(400).json({
         message:
           "Email is already registered. Please log in or use another email.",
       });
     }
 
+    // Check if username is already taken
+    const existingUsername = await prisma.user.findUnique({
+      where: { username },
+    });
+    if (existingUsername) {
+      return res.status(400).json({
+        message: "Username is already taken. Please choose another one.",
+      });
+    }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create new user
     const user = await prisma.user.create({
       data: {
         username,
@@ -84,8 +97,10 @@ const register = async (req, res) => {
       },
     });
 
+    // Return successful response
     res.status(201).json({ message: "User registered successfully", user });
   } catch (error) {
+    // Return error response
     res.status(500).json({
       message: "An error occurred while registering the user.",
       error: error.message,
