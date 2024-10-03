@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const passport = require("passport");
 const helmet = require("helmet"); // Import Helmet
+const rateLimit = require("express-rate-limit"); // Import rate limiting
 const { PrismaClient } = require("@prisma/client");
 const swaggerDocs = require("./swagger");
 
@@ -13,6 +14,16 @@ const userRoutes = require("./routes/userRoutes");
 const itemRoutes = require("./routes/itemRoutes");
 
 const app = express();
+
+// Rate limiting middleware
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 60, // Limit each IP to 60 requests per windowMs
+  message: "Too many requests from this IP, please try again later.",
+});
+
+// Apply rate limiting to all requests
+app.use(limiter);
 
 app.use(
   helmet({

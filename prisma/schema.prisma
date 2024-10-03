@@ -8,19 +8,22 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  username  String   @unique 
-  email     String   @unique
-  password  String?  
-  role      Role     @default(USER)
-  githubId  String?  @unique 
-  googleId  String?  @unique 
-  items     Item[]   @relation("UserItems")
-  views     View[]   @relation("UserViews")
-  likes     Like[]   @relation("UserLikes")
-  comments  Comment[] @relation("UserComments")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt 
+  id                String     @id @default(uuid()) @db.Uuid 
+  username          String     @unique
+  email             String     @unique
+  password          String?
+  githubId          String?    @unique
+  googleId          String?    @unique
+  role              Role       @default(USER)
+  loginAttempts     Int        @default(0)
+  failedLoginAttempts Int      @default(0)
+  isLocked          Boolean    @default(false)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  items             Item[]     @relation("UserItems")
+  views             View[]     @relation("UserViews")
+  likes             Like[]     @relation("UserLikes")
+  comments          Comment[]   @relation("UserComments")
 }
 
 model Item {
@@ -31,13 +34,13 @@ model Item {
   photoSize   Int?
   userId      String     @db.Uuid
   user        User       @relation("UserItems", fields: [userId], references: [id], onDelete: Cascade)
-  views       View[]
-  likes       Like[]
-  comments    Comment[]
+  views       View[]     @relation("ItemViews")
+  likes       Like[]     @relation("ItemLikes")
+  comments    Comment[]  @relation("ItemComments")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt // Automatically update on record change
 
   @@index([userId])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt // Automatically update on record change
 }
 
 model View {
@@ -46,7 +49,7 @@ model View {
   itemId    String   @db.Uuid
   viewedAt  DateTime @default(now())
   user      User     @relation("UserViews", fields: [userId], references: [id], onDelete: Cascade)
-  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item      Item     @relation("ItemViews", fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
 }
@@ -56,7 +59,7 @@ model Like {
   userId    String   @db.Uuid
   itemId    String   @db.Uuid
   user      User     @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
-  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item      Item     @relation("ItemLikes", fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
 }
@@ -68,9 +71,10 @@ model Comment {
   comment     String
   commentedAt DateTime @default(now())
   user        User     @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
-  item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item        Item     @relation("ItemComments", fields: [itemId], references: [id], onDelete: Cascade)
 }
 
+// Define the Role enum for user roles
 enum Role {
   SUPER_ADMIN
   ADMIN

@@ -3,10 +3,19 @@ const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const passport = require("passport");
 const GitHubStrategy = require("passport-github2").Strategy;
+const nodemailer = require("nodemailer"); // Import nodemailer
 
 const prisma = new PrismaClient();
 
 const blacklistedTokens = [];
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 // Check if the token is blacklisted
 const isTokenBlacklisted = (token) => {
@@ -94,6 +103,9 @@ const register = async (req, res) => {
         email,
         password: hashedPassword,
         role: role || "USER",
+        loginAttempts: 0, // Initialize login attempts
+        failedLoginAttempts: 0, // Initialize failed login attempts
+        isLocked: false, // Initialize account lock status
       },
     });
 
@@ -127,6 +139,13 @@ const login = async (req, res) => {
         .json({ message: "User not found. Please register first." });
     }
 
+    if (user.isLocked) {
+      return res.status(403).json({
+        message:
+          "Your account is locked due to too many failed login attempts.",
+      });
+    }
+
     if (!user.password) {
       return res.status(401).json({
         message: "User authenticated via OAuth. Use OAuth to log in.",
@@ -135,8 +154,50 @@ const login = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      // Increment login attempts
+      await prisma.user.update({
+        where: { email },
+        data: {
+          loginAttempts: { increment: 1 },
+        },
+      });
+
+      // Lock the account if login attempts exceed the limit
+      if (user.loginAttempts + 1 >= 5) {
+        await prisma.user.update({
+          where: { email },
+          data: {
+            isLocked: true,
+          },
+        });
+
+        // Send email notification
+        try {
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: user.email,
+            subject: "Account Locked",
+            text: "Your account has been locked due to too many failed login attempts.",
+          });
+        } catch (emailError) {
+          console.error("Failed to send email:", emailError);
+        }
+
+        return res.status(403).json({
+          message: "Your account has been locked. An email has been sent.",
+        });
+      }
+
       return res.status(401).json({ message: "Invalid password." });
     }
+
+    // Reset login attempts on successful login
+    await prisma.user.update({
+      where: { email },
+      data: {
+        loginAttempts: 0,
+      },
+    });
 
     const token = generateToken(user);
 
